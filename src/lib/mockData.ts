@@ -10,9 +10,11 @@ export interface VisitorEntry {
   id: string;
   name: string;
   college: string;
+  program?: string;
   reason: string;
   isEmployee: boolean;
   employeeType?: 'teacher' | 'staff';
+  userEmail?: string;
   timestamp: Date;
 }
 
