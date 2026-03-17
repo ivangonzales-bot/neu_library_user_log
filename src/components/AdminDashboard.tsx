@@ -22,9 +22,16 @@ export default function AdminDashboard() {
   const [reasonFilter, setReasonFilter] = useState<string>('all');
   const [collegeFilter, setCollegeFilter] = useState<string>('all');
   const [employeeFilter, setEmployeeFilter] = useState<string>('all');
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    return subscribe(() => setTick(t => t + 1));
+  }, []);
+
+  const allVisitors = getAllLogs();
 
   const filteredVisitors = useMemo(() => {
-    return MOCK_VISITORS.filter((v: VisitorEntry) => {
+    return allVisitors.filter((v: VisitorEntry) => {
       // Date filter
       if (dateFilter === 'today' && !isToday(v.timestamp)) return false;
       if (dateFilter === 'week' && !isThisWeek(v.timestamp, { weekStartsOn: 1 })) return false;
