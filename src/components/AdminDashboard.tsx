@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/authContext';
-import { MOCK_VISITORS, COLLEGES, VISIT_REASONS, VisitorEntry } from '@/lib/mockData';
+import { COLLEGES, VISIT_REASONS, VisitorEntry } from '@/lib/mockData';
+import { getAllLogs, subscribe } from '@/lib/visitorLogStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,9 +22,16 @@ export default function AdminDashboard() {
   const [reasonFilter, setReasonFilter] = useState<string>('all');
   const [collegeFilter, setCollegeFilter] = useState<string>('all');
   const [employeeFilter, setEmployeeFilter] = useState<string>('all');
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    return subscribe(() => setTick(t => t + 1));
+  }, []);
+
+  const allVisitors = getAllLogs();
 
   const filteredVisitors = useMemo(() => {
-    return MOCK_VISITORS.filter((v: VisitorEntry) => {
+    return allVisitors.filter((v: VisitorEntry) => {
       // Date filter
       if (dateFilter === 'today' && !isToday(v.timestamp)) return false;
       if (dateFilter === 'week' && !isThisWeek(v.timestamp, { weekStartsOn: 1 })) return false;
@@ -44,7 +52,7 @@ export default function AdminDashboard() {
       if (employeeFilter === 'staff' && v.employeeType !== 'staff') return false;
       return true;
     });
-  }, [dateFilter, startDate, endDate, reasonFilter, collegeFilter, employeeFilter]);
+  }, [allVisitors, dateFilter, startDate, endDate, reasonFilter, collegeFilter, employeeFilter]);
 
   const stats = useMemo(() => {
     const total = filteredVisitors.length;
@@ -54,12 +62,12 @@ export default function AdminDashboard() {
       acc[v.college] = (acc[v.college] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    const topCollegeName = Object.entries(topCollege).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+    const topCollegeName = Object.entries(topCollege).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || 'N/A';
     const topReason = filteredVisitors.reduce((acc, v) => {
       acc[v.reason] = (acc[v.reason] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    const topReasonName = Object.entries(topReason).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+    const topReasonName = Object.entries(topReason).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || 'N/A';
     return { total, employees, students, topCollegeName, topReasonName };
   }, [filteredVisitors]);
 
