@@ -62,12 +62,12 @@ export default function AdminDashboard() {
       acc[v.college] = (acc[v.college] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    const topCollegeName = Object.entries(topCollege).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+    const topCollegeName = Object.entries(topCollege).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || 'N/A';
     const topReason = filteredVisitors.reduce((acc, v) => {
       acc[v.reason] = (acc[v.reason] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    const topReasonName = Object.entries(topReason).sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+    const topReasonName = Object.entries(topReason).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0] || 'N/A';
     return { total, employees, students, topCollegeName, topReasonName };
   }, [filteredVisitors]);
 
