@@ -4,12 +4,11 @@ import { useAuth } from '@/lib/authContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { BookOpen, Lock, Mail, GraduationCap, Briefcase, Shield } from 'lucide-react';
+import { BookOpen, Lock, Mail, GraduationCap, Shield } from 'lucide-react';
 import type { UserRole } from '@/lib/mockData';
 
 const ROLE_OPTIONS: { value: UserRole; label: string; icon: typeof GraduationCap; description: string }[] = [
   { value: 'user', label: 'Student', icon: GraduationCap, description: 'Log your library visits' },
-  { value: 'staff', label: 'Staff', icon: Briefcase, description: 'Library staff access' },
   { value: 'admin', label: 'Admin', icon: Shield, description: 'Full dashboard access' },
 ];
 
@@ -32,7 +31,7 @@ export default function LoginPage() {
     }
     const success = login(email, password, role);
     if (!success) {
-      setError('Only jcesperanza@neu.edu.ph can sign in as Admin');
+      setError('Only admin emails (containing ".admin") or jcesperanza@neu.edu.ph can sign in as Admin');
     }
   };
 
@@ -68,7 +67,7 @@ export default function LoginPage() {
             {/* Role Switcher */}
             <div className="mb-6">
               <label className="text-sm font-medium font-sans text-foreground mb-2 block">Sign in as</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 {ROLE_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
                   const isActive = role === opt.value;
@@ -110,6 +109,11 @@ export default function LoginPage() {
                     className="pl-10 h-11 font-sans"
                   />
                 </div>
+                {role === 'admin' && (
+                  <p className="text-xs text-muted-foreground font-sans">
+                    Admin emails must contain ".admin" (e.g. miguel.admin@neu.edu.ph)
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium font-sans text-foreground">Password</label>
