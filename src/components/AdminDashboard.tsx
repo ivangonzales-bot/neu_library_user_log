@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { BookOpen, LogOut, Users, TrendingUp, GraduationCap, Briefcase, Calendar, Filter, X, ArrowLeft, Pencil, Trash2, Eye } from 'lucide-react';
+import { BookOpen, LogOut, Users, TrendingUp, GraduationCap, Briefcase, Calendar, Filter, X, ArrowLeft, Pencil, Trash2, Eye, History } from 'lucide-react';
 import { format, isToday, isThisWeek, isWithinInterval, parseISO } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 
