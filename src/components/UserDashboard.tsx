@@ -19,7 +19,7 @@ export default function UserDashboard() {
   const [customReason, setCustomReason] = useState('');
   const [college, setCollege] = useState('');
   const [program, setProgram] = useState('');
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     return subscribe(() => setTick(t => t + 1));
@@ -27,11 +27,8 @@ export default function UserDashboard() {
 
   const myLogs = useMemo(() => {
     return user ? getLogsByEmail(user.email) : [];
-  }, [user, /* re-render on tick */]);
-
-  // Force re-read on tick
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const logs = useMemo(() => (user ? getLogsByEmail(user.email) : []), [user, Math.random]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, tick]);
 
   const availablePrograms = college ? (PROGRAMS[college] || []) : [];
 
