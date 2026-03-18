@@ -7,7 +7,7 @@ const Index = () => {
   const { user } = useAuth();
 
   if (!user) return <LoginPage />;
-  if (user.role === 'admin') return <AdminDashboard />;
+  if (user.role === 'admin' || user.role === 'staff') return <AdminDashboard />;
   return <UserDashboard />;
 };
 

@@ -1,4 +1,4 @@
-export type UserRole = 'user' | 'admin';
+export type UserRole = 'user' | 'staff' | 'admin';
 
 export interface User {
   email: string;
@@ -62,19 +62,34 @@ function randomItem<T>(arr: T[]): T {
 const firstNames = ['Juan', 'Maria', 'Jose', 'Ana', 'Carlos', 'Sofia', 'Miguel', 'Isabella', 'Rafael', 'Carmen', 'Diego', 'Lucia', 'Pedro', 'Elena', 'Marco', 'Angela', 'Luis', 'Rosa', 'Daniel', 'Patricia'];
 const lastNames = ['Santos', 'Reyes', 'Cruz', 'Garcia', 'Torres', 'Flores', 'Rivera', 'Lopez', 'Gonzales', 'Ramos', 'Mendoza', 'Aquino', 'Villanueva', 'Bautista', 'Dela Cruz'];
 
+const mockEmails = [
+  'juan.santos@neu.edu.ph',
+  'maria.reyes@neu.edu.ph',
+  'jose.cruz@neu.edu.ph',
+  'ana.garcia@neu.edu.ph',
+  'carlos.torres@neu.edu.ph',
+  'sofia.flores@neu.edu.ph',
+  'miguel.rivera@neu.edu.ph',
+  'isabella.lopez@neu.edu.ph',
+];
+
 export function generateMockVisitors(count: number = 200): VisitorEntry[] {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   return Array.from({ length: count }, (_, i) => {
     const isEmployee = Math.random() < 0.15;
+    const college = randomItem(COLLEGES);
+    const programs = PROGRAMS[college] || [];
     return {
       id: `v-${i + 1}`,
       name: `${randomItem(firstNames)} ${randomItem(lastNames)}`,
-      college: randomItem(COLLEGES),
+      college,
+      program: programs.length > 0 ? randomItem(programs) : undefined,
       reason: randomItem(VISIT_REASONS),
       isEmployee,
       employeeType: isEmployee ? randomItem(['teacher', 'staff'] as const) : undefined,
+      userEmail: randomItem(mockEmails),
       timestamp: randomDate(thirtyDaysAgo, now),
     };
   }).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
