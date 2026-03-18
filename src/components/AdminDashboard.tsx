@@ -484,5 +484,3 @@ export default function AdminDashboard() {
   );
 }
 
-// Small import used in detail view
-import { History } from 'lucide-react';
