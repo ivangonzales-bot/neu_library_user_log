@@ -25,7 +25,7 @@ export default function LoginPage() {
       setError('Please use your NEU email (@neu.edu.ph)');
       return;
     }
-    if (password.length < 4) {
+    if (role === 'admin' && password.length < 4) {
       setError('Please enter a valid password');
       return;
     }
@@ -115,19 +115,21 @@ export default function LoginPage() {
                   </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium font-sans text-foreground">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                    className="pl-10 h-11 font-sans"
-                  />
+              {role === 'admin' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium font-sans text-foreground">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                      className="pl-10 h-11 font-sans"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
               {error && (
                 <motion.p
                   initial={{ opacity: 0, x: -10 }}
