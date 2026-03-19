@@ -1,58 +1,69 @@
-import { VisitorEntry, generateMockVisitors } from './mockData';
+import { supabase } from '@/integrations/supabase/client';
 
-let allLogs: VisitorEntry[] = generateMockVisitors(250);
-let listeners: Array<() => void> = [];
-
-function notify() {
-  listeners.forEach(fn => fn());
+export interface VisitRecord {
+  id: string;
+  user_id: string | null;
+  college: string | null;
+  program: string | null;
+  reason: string | null;
+  created_at: string | null;
 }
 
-export function getAllLogs(): VisitorEntry[] {
-  return allLogs;
+export async function getAllVisits(): Promise<VisitRecord[]> {
+  const { data, error } = await supabase
+    .from('visits')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Error fetching visits:', error);
+    return [];
+  }
+  return data || [];
 }
 
-export function getLogsByEmail(email: string): VisitorEntry[] {
-  return allLogs.filter(v => v.userEmail === email);
+export async function getVisitsByUserId(userId: string): Promise<VisitRecord[]> {
+  const { data, error } = await supabase
+    .from('visits')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Error fetching visits by user:', error);
+    return [];
+  }
+  return data || [];
 }
 
-export function getUniqueUsers(): { email: string; name: string; visitCount: number; lastVisit: Date }[] {
-  const userMap = new Map<string, { name: string; count: number; lastVisit: Date }>();
-  allLogs.forEach(v => {
-    if (!v.userEmail) return;
-    const existing = userMap.get(v.userEmail);
-    if (!existing) {
-      userMap.set(v.userEmail, { name: v.name, count: 1, lastVisit: v.timestamp });
-    } else {
-      existing.count++;
-      if (v.timestamp > existing.lastVisit) {
-        existing.lastVisit = v.timestamp;
-        existing.name = v.name;
-      }
-    }
-  });
-  return Array.from(userMap.entries())
-    .map(([email, data]) => ({ email, name: data.name, visitCount: data.count, lastVisit: data.lastVisit }))
-    .sort((a, b) => b.lastVisit.getTime() - a.lastVisit.getTime());
+export async function addVisit(visit: { user_id: string; college: string; program: string; reason: string }) {
+  const { data, error } = await supabase
+    .from('visits')
+    .insert([visit])
+    .select();
+  if (error) {
+    console.error('Error inserting visit:', error);
+    throw error;
+  }
+  return data;
 }
 
-export function addLog(entry: VisitorEntry) {
-  allLogs = [entry, ...allLogs];
-  notify();
+export async function updateVisit(id: string, updates: { reason?: string; college?: string; program?: string }) {
+  const { error } = await supabase
+    .from('visits')
+    .update(updates)
+    .eq('id', id);
+  if (error) {
+    console.error('Error updating visit:', error);
+    throw error;
+  }
 }
 
-export function updateLog(id: string, updates: Partial<VisitorEntry>) {
-  allLogs = allLogs.map(v => v.id === id ? { ...v, ...updates } : v);
-  notify();
-}
-
-export function deleteLog(id: string) {
-  allLogs = allLogs.filter(v => v.id !== id);
-  notify();
-}
-
-export function subscribe(fn: () => void) {
-  listeners.push(fn);
-  return () => {
-    listeners = listeners.filter(l => l !== fn);
-  };
+export async function deleteVisit(id: string) {
+  const { error } = await supabase
+    .from('visits')
+    .delete()
+    .eq('id', id);
+  if (error) {
+    console.error('Error deleting visit:', error);
+    throw error;
+  }
 }
