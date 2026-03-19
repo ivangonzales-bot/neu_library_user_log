@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      logs: {
+        Row: {
+          concern: string | null
+          course: string | null
+          created_at: string | null
+          id: string
+          time_in: string | null
+          user_id: string | null
+        }
+        Insert: {
+          concern?: string | null
+          course?: string | null
+          created_at?: string | null
+          id?: string
+          time_in?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          concern?: string | null
+          course?: string | null
+          created_at?: string | null
+          id?: string
+          time_in?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           college: string | null
