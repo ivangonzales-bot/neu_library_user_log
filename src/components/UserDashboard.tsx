@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/authContext';
 import { COLLEGES, PROGRAMS, VISIT_REASONS } from '@/lib/mockData';
-import { addLog, getLogsByEmail, subscribe } from '@/lib/visitorLogStore';
+import { addVisit, getAllVisits, VisitRecord } from '@/lib/visitorLogStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,20 +19,23 @@ export default function UserDashboard() {
   const [customReason, setCustomReason] = useState('');
   const [college, setCollege] = useState('');
   const [program, setProgram] = useState('');
-  const [tick, setTick] = useState(0);
+  const [myLogs, setMyLogs] = useState<VisitRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchMyLogs = async () => {
+    if (!user) return;
+    const all = await getAllVisits();
+    // Filter by user_id which we store as the email
+    setMyLogs(all.filter(v => v.user_id === user.email));
+  };
 
   useEffect(() => {
-    return subscribe(() => setTick(t => t + 1));
-  }, []);
-
-  const myLogs = useMemo(() => {
-    return user ? getLogsByEmail(user.email) : [];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, tick]);
+    fetchMyLogs();
+  }, [user]);
 
   const availablePrograms = college ? (PROGRAMS[college] || []) : [];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!reason) {
       toast({ title: 'Please select a reason for your visit', variant: 'destructive' });
       return;
@@ -48,22 +51,25 @@ export default function UserDashboard() {
 
     const finalReason = reason === 'Other' ? (customReason.trim() || 'Other') : reason;
 
-    addLog({
-      id: `v-${Date.now()}`,
-      name: user?.name || 'Unknown',
-      college,
-      program,
-      reason: finalReason,
-      isEmployee: false,
-      userEmail: user?.email,
-      timestamp: new Date(),
-    });
-
-    toast({ title: 'Visit logged successfully!' });
-    setReason('');
-    setCustomReason('');
-    setCollege('');
-    setProgram('');
+    setLoading(true);
+    try {
+      await addVisit({
+        user_id: user?.email || 'unknown',
+        college,
+        program,
+        reason: finalReason,
+      });
+      toast({ title: 'Visit logged successfully!' });
+      setReason('');
+      setCustomReason('');
+      setCollege('');
+      setProgram('');
+      await fetchMyLogs();
+    } catch {
+      toast({ title: 'Failed to save visit. Please try again.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -94,7 +100,6 @@ export default function UserDashboard() {
         </motion.div>
 
         <div className="grid lg:grid-cols-5 gap-6">
-          {/* Log Form */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="lg:col-span-2">
             <Card className="border-0 shadow-md">
               <CardHeader className="pb-4">
@@ -142,14 +147,13 @@ export default function UserDashboard() {
                   </Select>
                 </div>
 
-                <Button onClick={handleSubmit} className="w-full font-sans gap-2 mt-2">
-                  <Send className="w-4 h-4" /> Submit Log
+                <Button onClick={handleSubmit} disabled={loading} className="w-full font-sans gap-2 mt-2">
+                  <Send className="w-4 h-4" /> {loading ? 'Saving...' : 'Submit Log'}
                 </Button>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Log History */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-3">
             <Card className="border-0 shadow-md">
               <CardHeader className="pb-4">
@@ -173,12 +177,12 @@ export default function UserDashboard() {
                       {myLogs.map(v => (
                         <TableRow key={v.id}>
                           <TableCell className="font-sans text-sm text-muted-foreground">
-                            {format(v.timestamp, 'MMM d, yyyy h:mm a')}
+                            {v.created_at ? format(new Date(v.created_at), 'MMM d, yyyy h:mm a') : '—'}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="font-sans text-xs font-normal">{v.reason}</Badge>
+                            <Badge variant="outline" className="font-sans text-xs font-normal">{v.reason || '—'}</Badge>
                           </TableCell>
-                          <TableCell className="font-sans text-sm text-muted-foreground">{v.college}</TableCell>
+                          <TableCell className="font-sans text-sm text-muted-foreground">{v.college || '—'}</TableCell>
                           <TableCell className="font-sans text-sm text-muted-foreground">{v.program || '—'}</TableCell>
                         </TableRow>
                       ))}
