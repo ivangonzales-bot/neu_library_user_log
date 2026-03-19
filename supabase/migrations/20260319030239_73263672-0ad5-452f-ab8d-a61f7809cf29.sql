@@ -1,0 +1,1 @@
+ALTER TABLE public.visits ALTER COLUMN user_id TYPE text USING user_id::text;
