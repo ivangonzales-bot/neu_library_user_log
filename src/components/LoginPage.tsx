@@ -4,12 +4,12 @@ import { useAuth } from '@/lib/authContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { BookOpen, Lock, Mail, GraduationCap } from 'lucide-react';
+import { BookOpen, Lock, Mail, GraduationCap, Chrome } from 'lucide-react';
 import type { UserRole } from '@/lib/mockData';
 import { isUserBlocked } from '@/lib/blockedUsersStore';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showAdmin, setShowAdmin] = useState(false);
@@ -102,6 +102,22 @@ export default function LoginPage() {
                     )}
                     <Button type="submit" disabled={loading} className="w-full h-11 font-sans font-semibold text-base shadow-lg shadow-primary/20">
                       {loading ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                    <div className="relative my-4">
+                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                      <div className="relative flex justify-center text-xs"><span className="bg-card px-2 text-muted-foreground font-sans">or</span></div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={loading}
+                      onClick={async () => {
+                        setLoading(true);
+                        try { await loginWithGoogle(); } catch { setError('Google sign-in failed. Please try again.'); } finally { setLoading(false); }
+                      }}
+                      className="w-full h-11 font-sans font-semibold text-base gap-2"
+                    >
+                      <Chrome className="w-5 h-5" /> Sign in with Google
                     </Button>
                   </form>
                   <button
