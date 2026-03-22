@@ -45,7 +45,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetchVisits();
+    fetchData();
   }, []);
 
   const filteredVisitors = useMemo(() => {
