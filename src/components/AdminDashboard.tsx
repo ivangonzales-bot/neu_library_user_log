@@ -36,10 +36,11 @@ export default function AdminDashboard() {
   const [editCollege, setEditCollege] = useState('');
   const [editProgram, setEditProgram] = useState('');
 
-  const fetchVisits = async () => {
+  const fetchData = async () => {
     setLoading(true);
-    const data = await getAllVisits();
-    setAllVisits(data);
+    const [visitsData, blockedData] = await Promise.all([getAllVisits(), getBlockedUsers()]);
+    setAllVisits(visitsData);
+    setBlockedUsers(blockedData);
     setLoading(false);
   };
 
