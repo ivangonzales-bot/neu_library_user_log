@@ -1,25 +1,24 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/authContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { BookOpen, Lock, Mail, GraduationCap, Shield } from 'lucide-react';
+import { BookOpen, Lock, Mail, GraduationCap } from 'lucide-react';
 import type { UserRole } from '@/lib/mockData';
-
-const ROLE_OPTIONS: { value: UserRole; label: string; icon: typeof GraduationCap; description: string }[] = [
-  { value: 'user', label: 'Student', icon: GraduationCap, description: 'Log your library visits' },
-  { value: 'admin', label: 'Admin', icon: Shield, description: 'Full dashboard access' },
-];
+import { isUserBlocked } from '@/lib/blockedUsersStore';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('user');
+  const [showAdmin, setShowAdmin] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const role: UserRole = showAdmin ? 'admin' : 'user';
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.endsWith('@neu.edu.ph')) {
       setError('Please use your NEU email (@neu.edu.ph)');
@@ -29,9 +28,20 @@ export default function LoginPage() {
       setError('Please enter a valid password');
       return;
     }
-    const success = login(email, password, role);
-    if (!success) {
-      setError('Only admin emails (containing ".admin") or jcesperanza@neu.edu.ph can sign in as Admin');
+
+    setLoading(true);
+    try {
+      const blocked = await isUserBlocked(email);
+      if (blocked) {
+        setError('Your account has been blocked. Please contact the library admin.');
+        return;
+      }
+      const success = login(email, password, role);
+      if (!success) {
+        setError('Only admin emails (containing ".admin") or jcesperanza@neu.edu.ph can sign in as Admin');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,85 +74,99 @@ export default function LoginPage() {
             </div>
           </CardHeader>
           <CardContent className="px-8 pb-10 pt-4">
-            {/* Role Switcher */}
-            <div className="mb-6">
-              <label className="text-sm font-medium font-sans text-foreground mb-2 block">Sign in as</label>
-              <div className="grid grid-cols-2 gap-3">
-                {ROLE_OPTIONS.map((opt) => {
-                  const Icon = opt.icon;
-                  const isActive = role === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => { setRole(opt.value); setError(''); }}
-                      className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 font-sans ${
-                        isActive
-                          ? 'border-primary bg-primary/5 shadow-sm'
-                          : 'border-border bg-card hover:border-muted-foreground/30 hover:bg-muted/50'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                        isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                      }`}>
-                        <Icon className="w-4 h-4" />
+            <AnimatePresence mode="wait">
+              {!showAdmin ? (
+                <motion.div key="student" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <GraduationCap className="w-5 h-5 text-primary" />
+                      <span className="font-semibold text-foreground font-sans">Student Sign In</span>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium font-sans text-foreground">Email</label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="email"
+                          placeholder="you@neu.edu.ph"
+                          value={email}
+                          onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                          className="pl-10 h-11 font-sans"
+                        />
                       </div>
-                      <span className={`text-xs font-semibold ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {opt.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-sm font-medium font-sans text-foreground">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="email"
-                    placeholder="you@neu.edu.ph"
-                    value={email}
-                    onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                    className="pl-10 h-11 font-sans"
-                  />
-                </div>
-                {role === 'admin' && (
-                  <p className="text-xs text-muted-foreground font-sans">
-                    Admin emails must contain ".admin" (e.g. miguel.admin@neu.edu.ph)
-                  </p>
-                )}
-              </div>
-              {role === 'admin' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium font-sans text-foreground">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                      className="pl-10 h-11 font-sans"
-                    />
-                  </div>
-                </div>
+                    </div>
+                    {error && (
+                      <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-sm text-destructive font-sans">
+                        {error}
+                      </motion.p>
+                    )}
+                    <Button type="submit" disabled={loading} className="w-full h-11 font-sans font-semibold text-base shadow-lg shadow-primary/20">
+                      {loading ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                  </form>
+                  <button
+                    type="button"
+                    onClick={() => { setShowAdmin(true); setError(''); setEmail(''); setPassword(''); }}
+                    className="mt-6 w-full text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors font-sans text-center"
+                  >
+                    Admin? Tap here →
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div key="admin" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lock className="w-5 h-5 text-primary" />
+                      <span className="font-semibold text-foreground font-sans">Admin Sign In</span>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium font-sans text-foreground">Email</label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="email"
+                          placeholder="admin@neu.edu.ph"
+                          value={email}
+                          onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                          className="pl-10 h-11 font-sans"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground font-sans">
+                        Must contain ".admin" (e.g. miguel.admin@neu.edu.ph)
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium font-sans text-foreground">Password</label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                          className="pl-10 h-11 font-sans"
+                        />
+                      </div>
+                    </div>
+                    {error && (
+                      <motion.p initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-sm text-destructive font-sans">
+                        {error}
+                      </motion.p>
+                    )}
+                    <Button type="submit" disabled={loading} className="w-full h-11 font-sans font-semibold text-base shadow-lg shadow-primary/20">
+                      {loading ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                  </form>
+                  <button
+                    type="button"
+                    onClick={() => { setShowAdmin(false); setError(''); setEmail(''); setPassword(''); }}
+                    className="mt-6 w-full text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors font-sans text-center"
+                  >
+                    ← Back to Student Sign In
+                  </button>
+                </motion.div>
               )}
-              {error && (
-                <motion.p
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="text-sm text-destructive font-sans"
-                >
-                  {error}
-                </motion.p>
-              )}
-              <Button type="submit" className="w-full h-11 font-sans font-semibold text-base shadow-lg shadow-primary/20">
-                Sign In
-              </Button>
-            </form>
+            </AnimatePresence>
             <p className="text-xs text-center text-muted-foreground mt-6 font-sans">
               Use your NEU institutional email to log in
             </p>

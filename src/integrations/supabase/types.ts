@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_users: {
+        Row: {
+          blocked_at: string | null
+          blocked_by: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          email: string
+          id?: string
+        }
+        Update: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       library_logs: {
         Row: {
           full_name: string

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/authContext';
 import { COLLEGES, VISIT_REASONS, PROGRAMS } from '@/lib/mockData';
 import { getAllVisits, updateVisit, deleteVisit, VisitRecord } from '@/lib/visitorLogStore';
+import { getBlockedUsers, blockUser, unblockUser, BlockedUser } from '@/lib/blockedUsersStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { BookOpen, LogOut, Users, TrendingUp, GraduationCap, Calendar, Filter, X, ArrowLeft, Pencil, Trash2, Eye, History } from 'lucide-react';
+import { BookOpen, LogOut, Users, TrendingUp, GraduationCap, Calendar, Filter, X, ArrowLeft, Pencil, Trash2, Eye, History, Ban, CheckCircle } from 'lucide-react';
 import { format, isToday, isThisWeek, isWithinInterval, parseISO } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 
@@ -25,6 +26,7 @@ export default function AdminDashboard() {
   const [reasonFilter, setReasonFilter] = useState<string>('all');
   const [collegeFilter, setCollegeFilter] = useState<string>('all');
   const [allVisits, setAllVisits] = useState<VisitRecord[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [view, setView] = useState<View>('overview');
@@ -35,15 +37,16 @@ export default function AdminDashboard() {
   const [editCollege, setEditCollege] = useState('');
   const [editProgram, setEditProgram] = useState('');
 
-  const fetchVisits = async () => {
+  const fetchData = async () => {
     setLoading(true);
-    const data = await getAllVisits();
-    setAllVisits(data);
+    const [visitsData, blockedData] = await Promise.all([getAllVisits(), getBlockedUsers()]);
+    setAllVisits(visitsData);
+    setBlockedUsers(blockedData);
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchVisits();
+    fetchData();
   }, []);
 
   const filteredVisitors = useMemo(() => {
@@ -108,6 +111,28 @@ export default function AdminDashboard() {
 
   const hasActiveFilters = reasonFilter !== 'all' || collegeFilter !== 'all' || dateFilter !== 'week';
 
+  const blockedEmails = useMemo(() => new Set(blockedUsers.map(b => b.email)), [blockedUsers]);
+
+  const handleBlock = async (email: string) => {
+    try {
+      await blockUser(email, user?.email || 'admin');
+      toast({ title: `${email} has been blocked` });
+      await fetchData();
+    } catch {
+      toast({ title: 'Failed to block user', variant: 'destructive' });
+    }
+  };
+
+  const handleUnblock = async (email: string) => {
+    try {
+      await unblockUser(email);
+      toast({ title: `${email} has been unblocked` });
+      await fetchData();
+    } catch {
+      toast({ title: 'Failed to unblock user', variant: 'destructive' });
+    }
+  };
+
   const openEdit = (entry: VisitRecord) => {
     setEditEntry(entry);
     setEditReason(entry.reason || '');
@@ -125,7 +150,7 @@ export default function AdminDashboard() {
       });
       setEditEntry(null);
       toast({ title: 'Entry updated successfully' });
-      await fetchVisits();
+      await fetchData();
     } catch {
       toast({ title: 'Failed to update entry', variant: 'destructive' });
     }
@@ -135,7 +160,7 @@ export default function AdminDashboard() {
     try {
       await deleteVisit(id);
       toast({ title: 'Entry deleted' });
-      await fetchVisits();
+      await fetchData();
     } catch {
       toast({ title: 'Failed to delete entry', variant: 'destructive' });
     }
@@ -284,29 +309,51 @@ export default function AdminDashboard() {
                           <TableHead className="font-sans text-xs">User ID (Email)</TableHead>
                           <TableHead className="font-sans text-xs">Total Visits</TableHead>
                           <TableHead className="font-sans text-xs">Last Visit</TableHead>
-                          <TableHead className="font-sans text-xs">Action</TableHead>
+                          <TableHead className="font-sans text-xs">Status</TableHead>
+                          <TableHead className="font-sans text-xs">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {uniqueUsers.map(u => (
-                          <TableRow key={u.userId} className="cursor-pointer" onClick={() => { setSelectedUserId(u.userId); setView('student-detail'); }}>
-                            <TableCell className="font-sans text-sm font-medium">{u.userId}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="font-sans text-xs">{u.visitCount}</Badge>
-                            </TableCell>
-                            <TableCell className="font-sans text-sm text-muted-foreground">
-                              {u.lastVisit ? format(new Date(u.lastVisit), 'MMM d, yyyy h:mm a') : '—'}
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="sm" className="font-sans text-xs gap-1">
-                                <Eye className="w-3 h-3" /> View
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {uniqueUsers.map(u => {
+                          const isBlocked = blockedEmails.has(u.userId.toLowerCase());
+                          return (
+                            <TableRow key={u.userId}>
+                              <TableCell className="font-sans text-sm font-medium">{u.userId}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="font-sans text-xs">{u.visitCount}</Badge>
+                              </TableCell>
+                              <TableCell className="font-sans text-sm text-muted-foreground">
+                                {u.lastVisit ? format(new Date(u.lastVisit), 'MMM d, yyyy h:mm a') : '—'}
+                              </TableCell>
+                              <TableCell>
+                                {isBlocked ? (
+                                  <Badge variant="destructive" className="font-sans text-xs">Blocked</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="font-sans text-xs text-green-600">Active</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button variant="ghost" size="sm" onClick={() => { setSelectedUserId(u.userId); setView('student-detail'); }} className="font-sans text-xs gap-1">
+                                    <Eye className="w-3 h-3" /> View
+                                  </Button>
+                                  {isBlocked ? (
+                                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleUnblock(u.userId); }} className="font-sans text-xs gap-1 text-green-600 hover:text-green-700">
+                                      <CheckCircle className="w-3 h-3" /> Unblock
+                                    </Button>
+                                  ) : (
+                                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleBlock(u.userId); }} className="font-sans text-xs gap-1 text-destructive hover:text-destructive">
+                                      <Ban className="w-3 h-3" /> Block
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                         {uniqueUsers.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center py-12 text-muted-foreground font-sans">
+                            <TableCell colSpan={5} className="text-center py-12 text-muted-foreground font-sans">
                               No visitors yet. Data will appear when students log visits.
                             </TableCell>
                           </TableRow>

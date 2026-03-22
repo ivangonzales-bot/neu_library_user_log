@@ -59,12 +59,10 @@ export default function UserDashboard() {
         program,
         reason: finalReason,
       });
-      toast({ title: 'Visit logged successfully!' });
-      setReason('');
-      setCustomReason('');
-      setCollege('');
-      setProgram('');
-      await fetchMyLogs();
+      toast({ title: 'Visit logged successfully! Signing out...' });
+      setTimeout(() => {
+        logout();
+      }, 1500);
     } catch {
       toast({ title: 'Failed to save visit. Please try again.', variant: 'destructive' });
     } finally {
