@@ -111,6 +111,28 @@ export default function AdminDashboard() {
 
   const hasActiveFilters = reasonFilter !== 'all' || collegeFilter !== 'all' || dateFilter !== 'week';
 
+  const blockedEmails = useMemo(() => new Set(blockedUsers.map(b => b.email)), [blockedUsers]);
+
+  const handleBlock = async (email: string) => {
+    try {
+      await blockUser(email, user?.email || 'admin');
+      toast({ title: `${email} has been blocked` });
+      await fetchData();
+    } catch {
+      toast({ title: 'Failed to block user', variant: 'destructive' });
+    }
+  };
+
+  const handleUnblock = async (email: string) => {
+    try {
+      await unblockUser(email);
+      toast({ title: `${email} has been unblocked` });
+      await fetchData();
+    } catch {
+      toast({ title: 'Failed to unblock user', variant: 'destructive' });
+    }
+  };
+
   const openEdit = (entry: VisitRecord) => {
     setEditEntry(entry);
     setEditReason(entry.reason || '');
