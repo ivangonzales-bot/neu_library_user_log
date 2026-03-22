@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/authContext';
 import { COLLEGES, VISIT_REASONS, PROGRAMS } from '@/lib/mockData';
 import { getAllVisits, updateVisit, deleteVisit, VisitRecord } from '@/lib/visitorLogStore';
-import { Button } from '@/components/ui/button';
+import { getBlockedUsers, blockUser, unblockUser, BlockedUser } from '@/lib/blockedUsersStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
