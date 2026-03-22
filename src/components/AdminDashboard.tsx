@@ -351,10 +351,9 @@ export default function AdminDashboard() {
                             </TableRow>
                           );
                         })}
-                        ))}
                         {uniqueUsers.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center py-12 text-muted-foreground font-sans">
+                            <TableCell colSpan={5} className="text-center py-12 text-muted-foreground font-sans">
                               No visitors yet. Data will appear when students log visits.
                             </TableCell>
                           </TableRow>
