@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      library_logs: {
+        Row: {
+          full_name: string
+          id: string
+          program_course: string
+          reason: string
+          time_in: string | null
+          time_out: string | null
+        }
+        Insert: {
+          full_name: string
+          id?: string
+          program_course: string
+          reason: string
+          time_in?: string | null
+          time_out?: string | null
+        }
+        Update: {
+          full_name?: string
+          id?: string
+          program_course?: string
+          reason?: string
+          time_in?: string | null
+          time_out?: string | null
+        }
+        Relationships: []
+      }
       logs: {
         Row: {
           concern: string | null
