@@ -128,7 +128,7 @@ export default function AdminDashboard() {
       });
       setEditEntry(null);
       toast({ title: 'Entry updated successfully' });
-      await fetchVisits();
+      await fetchData();
     } catch {
       toast({ title: 'Failed to update entry', variant: 'destructive' });
     }
@@ -138,7 +138,7 @@ export default function AdminDashboard() {
     try {
       await deleteVisit(id);
       toast({ title: 'Entry deleted' });
-      await fetchVisits();
+      await fetchData();
     } catch {
       toast({ title: 'Failed to delete entry', variant: 'destructive' });
     }
