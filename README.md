@@ -106,7 +106,7 @@ create table visits (
 npm run dev
 ```
 
-Open [http://localhost:3000]([http://localhost:3000](https://preview--neu-visitor-vision.lovable.app/#)) in your browser.
+Open [http://localhost:3000](https://preview--neu-visitor-vision.lovable.app/#) in your browser.
 
 ---
 
