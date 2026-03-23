@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/authContext';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,15 @@ export default function LoginPage() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Pick up OAuth errors stored in sessionStorage
+  useEffect(() => {
+    const authError = sessionStorage.getItem('auth_error');
+    if (authError) {
+      setError(authError);
+      sessionStorage.removeItem('auth_error');
+    }
+  }, []);
 
   const role: UserRole = showAdmin ? 'admin' : 'user';
 

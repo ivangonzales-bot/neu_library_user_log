@@ -16,29 +16,41 @@ function isAdminEmail(email: string): boolean {
   return lower === ADMIN_EMAIL || lower.includes('.admin');
 }
 
+function isNeuEmail(email: string): boolean {
+  return email.toLowerCase().endsWith('@neu.edu.ph');
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  // Listen for Supabase auth state (Google sign-in)
+  const handleOAuthUser = async (session: { user: { user_metadata: Record<string, string>; email?: string } }) => {
+    const email = session.user.email || '';
+    if (!isNeuEmail(email)) {
+      await supabase.auth.signOut();
+      // Store error for login page to pick up
+      sessionStorage.setItem('auth_error', 'Only NEU institutional accounts (@neu.edu.ph) are allowed.');
+      setUser(null);
+      return;
+    }
+    const meta = session.user.user_metadata;
+    const name = meta?.full_name || meta?.name || email.split('@')[0] || 'User';
+    setUser({ email, name, role: 'user' });
+  };
+
   useEffect(() => {
+    // Set up listener BEFORE getSession
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
-          const meta = session.user.user_metadata;
-          const name = meta?.full_name || meta?.name || session.user.email?.split('@')[0] || 'User';
-          const email = session.user.email || '';
-          setUser({ email, name, role: 'user' });
+          await handleOAuthUser(session);
         }
       }
     );
 
     // Check existing session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user && !user) {
-        const meta = session.user.user_metadata;
-        const name = meta?.full_name || meta?.name || session.user.email?.split('@')[0] || 'User';
-        const email = session.user.email || '';
-        setUser({ email, name, role: 'user' });
+        await handleOAuthUser(session);
       }
     });
 
@@ -63,6 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
+        queryParams: {
+          hd: 'neu.edu.ph',
+        },
       },
     });
     if (error) {
